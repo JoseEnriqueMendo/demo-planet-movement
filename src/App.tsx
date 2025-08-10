@@ -208,6 +208,11 @@ const CameraController: React.FC<CameraControllerProps> = ({
       targetRef.current = target;
       if (controlsRef.current) {
         controlsRef.current.autoRotate = false;
+
+        // Bloquear cualquier interacción con el mouse
+        controlsRef.current.enableRotate = false; // Evita rotar
+        controlsRef.current.enableZoom = false; // Evita zoom
+        controlsRef.current.enablePan = false; // Evita desplazamiento
       }
     }
 
@@ -217,6 +222,9 @@ const CameraController: React.FC<CameraControllerProps> = ({
       targetRef.current = target;
       if (controlsRef.current) {
         controlsRef.current.autoRotate = true;
+        controlsRef.current.enableRotate = true;
+        controlsRef.current.enableZoom = true;
+        controlsRef.current.enablePan = true;
         controlsRef.current.update();
       }
     }
@@ -225,20 +233,6 @@ const CameraController: React.FC<CameraControllerProps> = ({
       console.log(zoomIn);
       setZoomingIn(true);
     }
-    //   console.log('zoom');
-    //   console.log(zoomIn);
-    //   if (!controlsRef.current) return;
-
-    //   const target = controlsRef.current.target;
-    //   const direction = new THREE.Vector3().subVectors(camera.position, target);
-
-    //   // Acercamos la cámara un 20%
-    //   direction.multiplyScalar(0.6);
-    //   const newCameraPosition = new THREE.Vector3().addVectors(target, direction);
-
-    //   camera.position.copy(newCameraPosition);
-    //   controlsRef.current.update();
-    // }
   }, [goToTarget, resetView, lat, lon, radius, camera, onActionDone, zoomIn]);
 
   return <OrbitControls ref={controlsRef} autoRotate autoRotateSpeed={0.5} />;
@@ -266,7 +260,7 @@ const App: React.FC = () => {
             setActivate(true);
             setGoToPeru(true);
           }}
-          className="custom-button"
+          className={!activate ? 'custom-button' : 'custom-button-selected'}
         >
           Ir a Perú
         </button>
@@ -301,6 +295,22 @@ const App: React.FC = () => {
 
     .custom-button:hover {
       background-color: #3a3838ff
+    }
+  `}
+      </style>
+
+      <style>
+        {`
+    .custom-button-selected {
+      padding: 10px 40px;
+      background-color: #e92525ff;
+      border: 1px solid #3a3838ff;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+     .custom-button-selected:hover   {
+      background-color: #ff5c5cff
     }
   `}
       </style>
