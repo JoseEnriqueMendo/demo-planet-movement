@@ -4,18 +4,7 @@ import * as THREE from 'three';
 import BasicSphere from './components/BasicSphere';
 import { OrbitControls, Billboard, Html } from '@react-three/drei';
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { useLoader } from '@react-three/fiber'
-import { TextureLoader } from 'three'
 import logoImg from '/assets/logo-lds.png' // tu logo
-
-function LogoSprite() {
-  const texture = useLoader(TextureLoader, logoImg)
-  return (
-    <sprite scale={[2, 1, 1]} position={[0, 2, 0]}>
-      <spriteMaterial map={texture} transparent />
-    </sprite>
-  )
-}
 
 interface CameraControllerProps {
   lat: number;
