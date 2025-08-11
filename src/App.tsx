@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import BasicSphere from './components/BasicSphere';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Billboard } from '@react-three/drei';
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
 interface CameraControllerProps {
@@ -36,6 +36,136 @@ const shortestAngleDelta = (from: number, to: number) => {
   return d;
 };
 
+// Convierte lat/lon a vec3 en "altura" (radius * k) para que flote sobre la esfera
+const latLonToVec3At = (lat: number, lon: number, r: number, k = 1.01) =>
+  latLonToVec3(lat, lon, r * k);
+
+// Pequeña ayuda para crear clúster con offsets lat/lon en grados
+const clusterFrom = (lat0: number, lon0: number, offsets: Array<[number, number]>) =>
+  offsets.map(([dLat, dLon]) => ({ lat: lat0 + dLat, lon: lon0 + dLon }));
+
+// Anclas para el foco (coinciden con el centro de los halos)
+const LIMA_ANCHOR = { lat: -10.0464, lon: -77.0428 };
+const BEIJING_ANCHOR = { lat: 39.9042, lon: 116.4074 };
+
+// Conversión km -> grados (varía con la latitud para la longitud)
+const kmToDegLat = (km: number) => km / 110.574; // aprox
+const kmToDegLon = (km: number, latDeg: number) =>
+  km / (111.320 * Math.cos((latDeg * Math.PI) / 180));
+
+type City = { lat: number; lon: number };
+
+/**
+ * Genera puntos dentro de un rectángulo (widthKm x heightKm) en el plano local
+ * ENU (E = +x, N = +y), rotado por angleDeg respecto a E (horario negativo).
+ * - (lat0, lon0) es el centro del rectángulo
+ * - biasEastKm desplaza todo el rectángulo hacia el Este (útil para Perú)
+ */
+function scatterRectRotated(
+  lat0: number,
+  lon0: number,
+  widthKm: number,
+  heightKm: number,
+  count: number,
+  angleDeg: number = 0,
+  biasEastKm: number = 0
+): City[] {
+  const out: City[] = [];
+  const theta = (angleDeg * Math.PI) / 180; // rad
+  const c = Math.cos(theta);
+  const s = Math.sin(theta);
+
+  for (let i = 0; i < count; i++) {
+    // coordenadas uniformes en el rectángulo, centradas
+    const x = (Math.random() - 0.5) * widthKm;   // Este (+), Oeste (-)
+    const y = (Math.random() - 0.5) * heightKm;  // Norte (+), Sur (-)
+
+    // rotación alrededor del centro
+    const xr = x * c - y * s + biasEastKm; // sesgo al Este si quieres alejar del mar
+    const yr = x * s + y * c;
+
+    // pasa a grados en torno al centro
+    const dLat = kmToDegLat(yr);
+    const dLon = kmToDegLon(xr, lat0);
+
+    out.push({ lat: lat0 + dLat, lon: lon0 + dLon });
+  }
+  return out;
+}
+
+// Convierte un tamaño en píxeles a tamaño en "mundo" para la distancia/fov actuales
+const worldSizeForPixels = (
+  px: number,
+  distance: number,
+  fovDeg: number,
+  viewportHeightPx: number
+) => {
+  const fov = (fovDeg * Math.PI) / 180;
+  const worldHeightAtD = 2 * distance * Math.tan(fov / 2);
+  return (px / viewportHeightPx) * worldHeightAtD;
+};
+
+const CityHalo: React.FC<{
+  position: THREE.Vector3;
+  pxSize?: number;   // tamaño objetivo en píxeles
+  phase?: number;
+}> = ({ position, pxSize = 26, phase = 0 }) => {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const matRef = useRef<THREE.MeshBasicMaterial>(null);
+  const { camera, size } = useThree();
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    const pulse = 0.5 + 0.5 * Math.sin(t * 2.2 + phase); // 0..1
+
+    const dist = camera.position.distanceTo(position);
+    const base = worldSizeForPixels(
+      pxSize,
+      dist,
+      (camera as THREE.PerspectiveCamera).fov,
+      size.height
+    );
+    const scale = base * (0.9 + 0.2 * pulse); // pulso ±10%
+
+    if (meshRef.current) meshRef.current.scale.setScalar(scale);
+    if (matRef.current) matRef.current.opacity = 0.22 + 0.25 * pulse;
+  });
+
+  return (
+    <Billboard position={position}>
+      <mesh ref={meshRef}>
+        <circleGeometry args={[0.5, 64]} />
+        <meshBasicMaterial
+          ref={matRef}
+          transparent
+          blending={THREE.NormalBlending}
+          color={["#ff0000", "#00a000", "#0000ff"][Math.floor(Math.random() * 3)]}
+        />
+      </mesh>
+    </Billboard>
+  );
+};
+
+const CityHalos: React.FC<{ cities: City[]; radius: number; visible: boolean; }>
+  = ({ cities, radius, visible }) => {
+    const positions = React.useMemo(
+      () => cities.map((c, i) => ({
+        pos: latLonToVec3(c.lat, c.lon, radius * 1.015), // 1.5% sobre la esfera
+        phase: (i * Math.PI * 2) / Math.max(1, cities.length),
+      })),
+      [cities, radius]
+    );
+
+    if (!visible) return null;
+    return (
+      <>
+        {positions.map(({ pos, phase }, idx) => (
+          <CityHalo key={idx} position={pos} phase={phase} />
+        ))}
+      </>
+    );
+  };
+
 const CameraController: React.FC<CameraControllerProps> = ({
   lat,
   lon,
@@ -49,8 +179,6 @@ const CameraController: React.FC<CameraControllerProps> = ({
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const { camera } = useThree();
 
-  // No mover el target; siempre en el centro
-  const targetRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
 
   // Estados internos para la animación por fases
   const phaseRef = useRef<'idle' | 'azimuth' | 'polar' | 'zoomIn' | 'zoomOut'>('idle');
@@ -230,6 +358,10 @@ const CameraController: React.FC<CameraControllerProps> = ({
     }
   }, [zoomOut, camera]);
 
+
+
+
+
   return <OrbitControls ref={controlsRef} autoRotate autoRotateSpeed={0.5} />;
 };
 
@@ -243,6 +375,45 @@ const App: React.FC = () => {
   const [zoomIn, setZoomIn] = useState(false);
   const [zoomOut, setZoomOut] = useState(false);   // 👈 nuevo
   const [activeLabel, setActiveLabel] = useState<'peru' | 'china' | null>(null);
+  const [isZoomedIn, setIsZoomedIn] = useState(false);
+  const [pendingZoomIn, setPendingZoomIn] = useState(false);
+  const [haloPoints, setHaloPoints] = useState<City[]>([]);
+
+  useEffect(() => {
+    if (!isZoomedIn || !activeLabel) {
+      setHaloPoints([]);
+      return;
+    }
+
+    if (activeLabel === 'peru') {
+      // Rectángulo de ~250 km (ancho) x 600 km (alto), girado ~-35°
+      // Empujamos ~40 km al Este para evitar océano
+      setHaloPoints(
+        scatterRectRotated(
+          LIMA_ANCHOR.lat + 1,
+          LIMA_ANCHOR.lon - 0.8,
+          100,   // widthKm (E-O)
+          300,   // heightKm (N-S)
+          20,   // cantidad (ajusta)
+          28,   // angleDeg (horario negativo)
+          40     // biasEastKm (mueve rectángulo hacia el Este)
+        )
+      );
+    } else {
+      // Beijing: rectángulo ~300 x 300 km sin sesgo, sin rotar
+      setHaloPoints(
+        scatterRectRotated(
+          BEIJING_ANCHOR.lat - 1,
+          BEIJING_ANCHOR.lon - 0.9,
+          300,
+          300,
+          30,
+          0,
+          0
+        )
+      );
+    }
+  }, [isZoomedIn, activeLabel]);
 
   return (
     <div style={{ width: '100vw', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -250,7 +421,7 @@ const App: React.FC = () => {
         <button
           onClick={() => {
             setActiveLabel('peru');
-            setDest({ lat: -9.2, lon: -75.0 });
+            setDest(LIMA_ANCHOR);
             setGoToTarget(true);
           }}
           className={activeLabel === 'peru' ? 'custom-button-selected' : 'custom-button'}
@@ -261,7 +432,7 @@ const App: React.FC = () => {
         <button
           onClick={() => {
             setActiveLabel('china');
-            setDest({ lat: 35.0, lon: 105.0 });
+            setDest(BEIJING_ANCHOR);
             setGoToTarget(true);
           }}
           className={activeLabel === 'china' ? 'custom-button-selected' : 'custom-button'}
@@ -272,6 +443,7 @@ const App: React.FC = () => {
         <button
           onClick={() => {
             setResetView(true);
+            setIsZoomedIn(false);   // 👈
             setActiveLabel(null);
           }}
           className="custom-button"
@@ -280,7 +452,7 @@ const App: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setZoomIn(true)}
+          onClick={() => { setPendingZoomIn(true); setZoomIn(true); }}
           className="custom-button"
           disabled={!activeLabel}
         >
@@ -288,9 +460,8 @@ const App: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setZoomOut(true)}          // 👈 nuevo
+          onClick={() => { setIsZoomedIn(false); setZoomOut(true); }}
           className="custom-button"
-          disabled={false /* si quieres, desactívalo hasta que haya hecho Zoom In */}
         >
           Zoom Out
         </button>
@@ -306,6 +477,12 @@ const App: React.FC = () => {
 
             <BasicSphere radius={radius} />
 
+            <CityHalos
+              cities={haloPoints}
+              radius={radius}
+              visible={isZoomedIn}
+            />
+
             {/* 👇 Un solo controlador de cámara */}
             <CameraController
               lat={dest.lat}
@@ -318,8 +495,14 @@ const App: React.FC = () => {
               onActionDone={() => {
                 setGoToTarget(false);
                 setResetView(false);
+                if (pendingZoomIn) {
+                  setIsZoomedIn(true);     // 👈 esto dispara el efecto que genera puntos
+                  setPendingZoomIn(false);
+                  // Si además quieres que se acerque más, asegúrate de que aquí se llame setZoomIn(true)
+                  // si no lo estás haciendo antes.
+                }
                 setZoomIn(false);
-                setZoomOut(false);                  // 👈 limpia Zoom Out también
+                setZoomOut(false);
               }}
             />
           </Canvas>
