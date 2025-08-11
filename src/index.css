@@ -1,13 +1,20 @@
 /* ===== Luz del Sur Design Tokens ===== */
-:root{
+:root {
   /* Colores de marca */
-  --ls-navy:#02194c;         /* fondo base */
-  --ls-blue:#243C8F;         /* primario */
-  --ls-blue-600:#2F54DB;     /* hover/énfasis */
-  --ls-orange:#F5A300;       /* acento */
-  --ls-orange-600:#E38F00;   /* acento hover */
-  --ls-text:#EAF0FF;         /* texto en oscuro */
-  --ls-muted:#6C7AA8;        /* bordes/sutil */
+  --ls-navy: #02194c;
+  /* fondo base */
+  --ls-blue: #243C8F;
+  /* primario */
+  --ls-blue-600: #2F54DB;
+  /* hover/énfasis */
+  --ls-orange: #F5A300;
+  /* acento */
+  --ls-orange-600: #E38F00;
+  /* acento hover */
+  --ls-text: #EAF0FF;
+  /* texto en oscuro */
+  --ls-muted: #6C7AA8;
+  /* bordes/sutil */
 
   color-scheme: dark;
   color: var(--ls-text);
@@ -24,67 +31,131 @@
 }
 
 /* ===== Resets sencillos ===== */
-*{ box-sizing:border-box; }
-html,body,#root{ height:100%; }
-body{
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
   padding: 20px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--ls-navy);
-  background-image: url('/assets/background.jpg'); /* Ruta relativa o absoluta */
+  background-image: url('/assets/background.jpg');
+  /* Ruta relativa o absoluta */
+  background-size: cover;
+  /* Ajusta para cubrir toda la pantalla */
+
   color: var(--ls-text);
 }
 
-a{ color: var(--ls-blue-600); text-decoration:none; }
-a:hover{ color:#88a7ff; }
+a {
+  color: var(--ls-blue-600);
+  text-decoration: none;
+}
 
-h1{ font-size: clamp(2rem, 3.2vw, 3rem); line-height:1.1; margin:0; }
+a:hover {
+  color: #88a7ff;
+}
+
+h1 {
+  font-size: clamp(2rem, 3.2vw, 3rem);
+  line-height: 1.1;
+  margin: 0;
+}
 
 /* ===== Componentes utilitarios ===== */
-.app-wrap{ width:min(1200px,96vw); margin-inline:auto; }
+.app-wrap {
+  width: min(1200px, 96vw);
+  margin-inline: auto;
+}
 
 /* Header con logo (opcional) */
-.ls-header{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:16px; padding:14px 18px; margin-bottom:16px;
+.ls-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
 }
-.ls-brand{ display:flex; align-items:center; gap:12px; }
-.ls-brand img{ height:28px; display:block; }
+
+.ls-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ls-brand img {
+  height: 28px;
+  display: block;
+}
 
 /* Botones */
-button{ all:unset; } /* limpiamos el estilo por defecto */
-.btn{
-  display:inline-flex; align-items:center; justify-content:center;
-  gap:.5rem; padding:.55rem 1rem;
-  border-radius:12px; border:1px solid transparent;
-  font-weight:600; letter-spacing:.2px; cursor:pointer;
+button {
+  all: unset;
+}
+
+/* limpiamos el estilo por defecto */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .55rem 1rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  letter-spacing: .2px;
+  cursor: pointer;
   transition: transform .08s ease, box-shadow .2s ease, background-color .2s ease, border-color .2s ease;
-  user-select:none;
+  user-select: none;
 }
-.btn:active{ transform: translateY(1px); }
 
-.btn-primary{ background:var(--ls-blue); color:white; }
-.btn-primary:hover{ background:var(--ls-blue-600); }
-
-.btn-accent{ background:var(--ls-orange); color:#1b1600; }
-.btn-accent:hover{ background:var(--ls-orange-600); }
-
-.btn-ghost{
-  background:rgba(255,255,255,.06);
-  border-color:rgba(255,255,255,.14);
-  color:var(--ls-text);
+.btn:active {
+  transform: translateY(1px);
 }
-.btn-ghost:hover{
-  background:rgba(255,255,255,.12);
-  border-color:rgba(255,255,255,.24);
+
+.btn-primary {
+  background: var(--ls-blue);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--ls-blue-600);
+}
+
+.btn-accent {
+  background: var(--ls-orange);
+  color: #1b1600;
+}
+
+.btn-accent:hover {
+  background: var(--ls-orange-600);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, .06);
+  border-color: rgba(255, 255, 255, .14);
+  color: var(--ls-text);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, .12);
+  border-color: rgba(255, 255, 255, .24);
 }
 
 /* Contenedor del Canvas */
-.canvas-card{
-  border-radius:24px;
-  border:1px solid rgba(255,255,255,.12);
-  overflow:hidden;
-  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+.canvas-card {
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .02));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
 }
