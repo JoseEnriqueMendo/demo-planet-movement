@@ -6,6 +6,35 @@ import { OrbitControls, Billboard, Html } from '@react-three/drei';
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import logoImg from '/assets/logo-lds.png' // tu logo
 
+type Lang = 'es' | 'en' | 'zh';
+
+const M: Record<Lang, Record<string, string>> = {
+  es: {
+    focusPeru: 'Enfocar Perú',
+    focusChina: 'Enfocar China',
+    unlock: 'Desbloquear',
+    zoomIn: 'Acercar',
+    zoomOut: 'Alejar',
+    langLabel: 'Idioma',
+  },
+  en: {
+    focusPeru: 'Focus Peru',
+    focusChina: 'Focus China',
+    unlock: 'Unlock',
+    zoomIn: 'Zoom In',
+    zoomOut: 'Zoom Out',
+    langLabel: 'Language',
+  },
+  zh: {
+    focusPeru: '聚焦秘鲁',
+    focusChina: '聚焦中国',
+    unlock: '解除锁定',
+    zoomIn: '放大',
+    zoomOut: '缩小',
+    langLabel: '语言',
+  },
+};
+
 interface CameraControllerProps {
   lat: number;
   lon: number;
@@ -369,6 +398,15 @@ const App: React.FC = () => {
   const [pendingZoomIn, setPendingZoomIn] = useState(false);
   const [haloPoints, setHaloPoints] = useState<City[]>([]);
 
+  const [lang, setLang] = useState<Lang>(() => {
+    // opcional: detectar idioma del navegador
+    const nav = navigator.language.toLowerCase();
+    if (nav.startsWith('es')) return 'es';
+    if (nav.startsWith('zh')) return 'zh';
+    return 'en';
+  });
+  const t = (key: string) => M[lang][key] ?? key;
+
   useEffect(() => {
     if (!isZoomedIn || !activeLabel) {
       setHaloPoints([]);
@@ -411,6 +449,21 @@ const App: React.FC = () => {
 
     <div style={{ width: '100vw', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {t('langLabel')}:
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value as Lang)}
+            className="btn btn-ghost"
+            style={{ padding: '0.4rem 0.6rem' }}
+          >
+            <option value="es">Español</option>
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+          </select>
+        </label>
+
         <button
           onClick={() => {
             setActiveLabel('peru');
@@ -419,7 +472,7 @@ const App: React.FC = () => {
           }}
           className={activeLabel === 'peru' ? 'btn btn-accent' : 'btn btn-ghost'}
         >
-          Focus Perú
+          {t('focusPeru')}
         </button>
 
         <button
@@ -430,7 +483,7 @@ const App: React.FC = () => {
           }}
           className={activeLabel === 'china' ? 'btn btn-accent' : 'btn btn-ghost'}
         >
-          Focus China
+          {t('focusChina')}
         </button>
 
         <button
@@ -441,7 +494,7 @@ const App: React.FC = () => {
           }}
           className="btn btn-ghost"
         >
-          Desbloquear
+          {t('unlock')}
         </button>
 
         <button
@@ -449,14 +502,14 @@ const App: React.FC = () => {
           className="btn btn-primary"
           disabled={!activeLabel}
         >
-          Zoom In
+          {t('zoomIn')}
         </button>
 
         <button
           onClick={() => { setIsZoomedIn(false); setZoomOut(true); }}
           className="btn btn-primary"
         >
-          Zoom Out
+          {t('zoomOut')}
         </button>
       </div>
 
