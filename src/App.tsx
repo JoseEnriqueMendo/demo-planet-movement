@@ -1,102 +1,3 @@
-// import { Canvas } from '@react-three/fiber';
-// import './App.css';
-// // import ThreeScene from './components/ThreeScene';
-// // import RotatingBox from './components/RotatingBox';
-// import { OrbitControls } from '@react-three/drei';
-// import EarthSphere from './components/EarthSphere';
-// import { useEffect } from 'react';
-
-// function App() {
-//   /*Frontend: Desarrollo en tecnologías como Three.js para visualización 3D y D3.js o
-// Plotly para gráficos interactivos.
-// */
-
-//   const handleaction = () => {
-//     alert('ss');
-//   };
-
-// const latLonToVec3 = (lat: number, lon: number, radius: number): THREE.Vector3 => {
-//   const phi = (90 - lat) * (Math.PI / 180); // latitud a radianes
-//   const theta = (lon + 180) * (Math.PI / 180); // longitud a radianes
-
-//   const x = -radius * Math.sin(phi) * Math.cos(theta);
-//   const y = radius * Math.cos(phi);
-//   const z = radius * Math.sin(phi) * Math.sin(theta);
-
-//   return new THREE.Vector3(x, y, z);
-// };
-
-//   const peruVec = latLonToVec3(-9.2, -75.0, 2.8); // Radio de tu esfera
-
-//   // Usar lookAt para apuntar
-//   camera.position.set(peruVec.x * 1.5, peruVec.y * 1.5, peruVec.z * 1.5); // Aleja un poco
-//   camera.lookAt(peruVec); // Mira hacia Perú
-
-//   useEffect(() => {
-//     const peruVec = latLonToVec3(-9.2, -75.0, 2.8);
-//     camera.position.set(peruVec.x * 1.5, peruVec.y * 1.5, peruVec.z * 1.5);
-//     camera.lookAt(peruVec);
-//     controlsRef.current.target.copy(peruVec);
-//   }, []);
-
-//   return (
-//     <>
-//       <div style={{ width: '50vw', height: '75vh', border: 'solid 1px' }}>
-//         {/* Lienzo de react-three-fiber: donde se renderiza la escena 3D */}
-//         <Canvas camera={{ position: [0, 0, 5] }} shadows>
-//           {/*   position: [0, 0, 5] // Posición inicial de la cámara: alejada 5 unidades en el eje Z fov,, que es
-//     }}
-//     shadows // Habilita el soporte de sombras en toda la escena */}
-
-//           {/* Luz ambiental: ilumina toda la escena de manera uniforme, sin dirección ni sombras */}
-//           <ambientLight intensity={1.0} />
-//           {/*     intensity={1.0} // Intensidad de la luz ambiental: 1 es valor máximo, ilumina todo uniformemente */}
-
-//           {/* Luz direccional: simula una fuente de luz como el sol, con sombras habilitadas */}
-//           <directionalLight position={[5, 5, 5]} castShadow />
-//           {/* position={[5, 5, 5]} // Posición de la luz direccional: arriba, a la derecha y al fondo
-//       castShadow // Permite que esta luz proyecte sombras sobre los objetos */}
-//           <EarthSphere />
-
-//           {/* Controles interactivos para rotar, hacer zoom y mover la cámara con el mouse */}
-//           <OrbitControls
-//             target={[peruVec.x, peruVec.y, peruVec.z]}
-//             autoRotate={true}
-//             autoRotateSpeed={0.2}
-//             maxDistance={10}
-//           />
-//           {/* enableZoom	boolean	Habilita o deshabilita el zoom con el mouse
-//               enableRotate	boolean	Permite girar la cámara
-//               enablePan	boolean	Permite mover la cámara lateralmente
-//               zoomSpeed	number	Velocidad del zoom (1 por defecto)
-//               rotateSpeed	number	⭐ Velocidad de rotación (1 por defecto)
-//               panSpeed	number	Velocidad de paneo lateral (1 por defecto)
-//               autoRotate	boolean	Activa rotación automática alrededor del objetivo
-//               autoRotateSpeed	number	⭐ Velocidad de rotación automática (por defecto 2.0)
-//               minDistance / maxDistance	number	Distancia mínima/máxima que la cámara puede alejarse/acercarse
-//               minPolarAngle / maxPolarAngle	number	Limita el ángulo vertical de rotación (para evitar que pase por debajo del suelo)
-//               minAzimuthAngle / maxAzimuthAngle	number	Limita la rotación horizontal (azimut)
-
-//               */}
-//         </Canvas>
-//       </div>
-//       {/*
-//       <div style={{ width: '50%', height: '50vh' }}>
-//         <Canvas camera={{ position: [0, 0, 10] }}>
-//           <ambientLight intensity={0.5} />
-//           <directionalLight position={[5, 10, 5]} />
-//           <RotatingBox />
-//         </Canvas>
-//       </div>
-//       <div className="App">
-//         <ThreeScene />
-//       </div> */}
-//       <button onClick={handleaction}>Test</button>
-//     </>
-//   );
-// }
-
-// export default App;
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -112,6 +13,8 @@ interface CameraControllerProps {
   resetView: boolean;
   zoomIn: boolean;
   onActionDone: () => void;
+  // 👇 nuevo
+  zoomOut?: boolean;
 }
 
 // Convertir lat/lon en posición 3D sobre la esfera
@@ -126,6 +29,13 @@ const latLonToVec3 = (lat: number, lon: number, radius: number): THREE.Vector3 =
   return new THREE.Vector3(x, y, z);
 };
 
+const shortestAngleDelta = (from: number, to: number) => {
+  let d = (to - from) % (Math.PI * 2);
+  if (d > Math.PI) d -= Math.PI * 2;
+  if (d < -Math.PI) d += Math.PI * 2;
+  return d;
+};
+
 const CameraController: React.FC<CameraControllerProps> = ({
   lat,
   lon,
@@ -133,224 +43,287 @@ const CameraController: React.FC<CameraControllerProps> = ({
   goToTarget,
   resetView,
   zoomIn,
+  zoomOut = false,         // 👈 nuevo
   onActionDone,
 }) => {
   const controlsRef = useRef<OrbitControlsImpl>(null);
   const { camera } = useThree();
-  const targetRef = useRef<THREE.Vector3 | null>(null);
-  const stepRef = useRef(0);
-  const [zoomingIn, setZoomingIn] = useState(false);
+
+  // No mover el target; siempre en el centro
+  const targetRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
+
+  // Estados internos para la animación por fases
+  const phaseRef = useRef<'idle' | 'azimuth' | 'polar' | 'zoomIn' | 'zoomOut'>('idle');
+  const desiredDirRef = useRef<THREE.Vector3 | null>(null);
+
+  // Guardamos la distancia orbital previa al Zoom In para "deshacer"
+  const preZoomDistRef = useRef<number | null>(null);  // 👈 nuevo
+
+  // Configuración (ajusta a tu gusto)
+  const speedAzimuth = 0.08; // 0.03–0.12
+  const speedPolar = 0.07;
+  const speedZoom = 0.06;
+  const equatorFirst = true;  // 👈 fuerza pasar por el ecuador
 
   useFrame(() => {
-    if (zoomingIn) {
-      const target = latLonToVec3(lat, lon, radius);
-      targetRef.current = target;
-      console.log(zoomingIn);
-      const direction = new THREE.Vector3().subVectors(camera.position, target);
-      const distance = direction.length();
-      console.log(distance);
-      if (distance > 0.72) {
-        console.log('test');
-        // puedes ajustar el mínimo de distancia
-        direction.multiplyScalar(0.94); // 5% más cerca cada frame
-        const newPosition = new THREE.Vector3().addVectors(target, direction);
-        camera.position.copy(newPosition);
-        if (controlsRef.current) {
-          controlsRef.current.update();
-        }
-      } else {
-        console.log('sali');
-        setZoomingIn(false); // detener zoom cuando ya estás suficientemente cerca
-        targetRef.current = null;
+    if (!controlsRef.current) return;
+
+    // Mantén el target en el centro SIEMPRE
+    controlsRef.current.target.set(0, 0, 0);
+
+    // --- ZOOM PROGRESIVO independiente ---
+    if (phaseRef.current === 'zoomIn') {
+      // acercar manteniendo dirección
+      const dirToCenter = camera.position.clone().normalize();
+      const target = desiredDirRef.current
+        ? desiredDirRef.current.clone().multiplyScalar(radius) // punto sobre la superficie
+        : new THREE.Vector3(0, 0, 0);
+
+      // distancia deseada para vista cercana
+      const minDist = radius * 1.05; // apenas fuera de la esfera
+      const curDist = camera.position.length();
+      const nextDist = THREE.MathUtils.lerp(curDist, minDist, speedZoom);
+
+      camera.position.copy(dirToCenter.multiplyScalar(nextDist));
+      controlsRef.current.update();
+
+      if (Math.abs(nextDist - minDist) < 0.01) {
+        phaseRef.current = 'idle';
         onActionDone();
-        return;
       }
+      return;
     }
 
-    if (!controlsRef.current || !targetRef.current) return;
-    const target = targetRef.current;
+    // --- ZOOM OUT (deshacer) ---
+    if (phaseRef.current === 'zoomOut') {                         // 👈 nuevo
+      const dirToCenter = camera.position.clone().normalize();
+      const curDist = camera.position.length();
 
-    // Fase 1: Interpolar el target del OrbitControls
-    controlsRef.current.target.lerp(target, 0.05);
+      // Si por alguna razón no tenemos "previa", usamos la orbital por defecto
+      const fallbackDist = radius * (resetView ? 1.8 : 1.5);
+      const targetDist = preZoomDistRef.current ?? fallbackDist;
 
-    // Fase 2: Interpolar la posición de la cámara hacia 1.5 veces el target (zoom progresivo)
-    const multiply = resetView ? 1.8 : 1.5;
+      const nextDist = THREE.MathUtils.lerp(curDist, targetDist, speedZoom);
+      camera.position.copy(dirToCenter.multiplyScalar(nextDist));
+      controlsRef.current.update();
 
-    const camTargetPos = target
-      .clone()
-      .normalize()
-      .multiplyScalar(radius * multiply);
-    camera.position.lerp(camTargetPos, 0.05);
-    console.log('ss');
-    controlsRef.current.update();
-    // Si estamos cerca del destino, finalizar animación
-
-    if (
-      controlsRef.current.target.distanceTo(target) < 0.01 &&
-      camera.position.distanceTo(camTargetPos) < 0.08
-    ) {
-      console.log('sds');
-      targetRef.current = null;
-      stepRef.current = 0;
-      if (resetView) {
-        console.log('entre');
-        targetRef.current = null; // punto actual
-        controlsRef.current?.target.set(0, 0, 0); // vista
+      if (Math.abs(nextDist - targetDist) < 0.01) {
+        // limpiamos estado de zoom previo
+        preZoomDistRef.current = null;
+        phaseRef.current = 'idle';
+        onActionDone();
       }
-      onActionDone();
+      return;
+    }
+    // Si no hay objetivo deseado, nada que hacer
+    if (!desiredDirRef.current) return;
+
+    // Spherical actual y deseado
+    const cur = new THREE.Spherical().setFromVector3(camera.position.clone());
+    const desiredDir = desiredDirRef.current.clone().normalize();
+    const des = new THREE.Spherical().setFromVector3(desiredDir);
+
+    // Distancia objetivo de la cámara (zoom orbital)
+    const desiredDist = radius * (resetView ? 1.8 : 1.5);
+
+    if (phaseRef.current === 'azimuth') {
+      // 1) Azimut hacia el destino, moviéndonos por el ecuador si equatorFirst=true
+      const thetaDelta = shortestAngleDelta(cur.theta, des.theta);
+      const nextTheta = cur.theta + thetaDelta * speedAzimuth;
+      const nextPhi = equatorFirst ? Math.PI / 2 : cur.phi; // mantener en ecuador
+
+      const nextR = THREE.MathUtils.lerp(cur.radius, desiredDist, 0.06);
+      const next = new THREE.Spherical(nextR, nextPhi, nextTheta);
+      camera.position.setFromSpherical(next);
+
+      controlsRef.current.update();
+
+      const azimuthClose = Math.abs(thetaDelta) < THREE.MathUtils.degToRad(1.0);
+      if (azimuthClose) {
+        phaseRef.current = 'polar';
+      }
+      return;
+    }
+
+    if (phaseRef.current === 'polar') {
+      // 2) Ajustar latitud (phi) hacia el destino
+      const phiDelta = des.phi - cur.phi;
+      const nextPhi = cur.phi + phiDelta * speedPolar;
+      const nextTheta = des.theta; // ya alineados en azimut
+      const nextR = THREE.MathUtils.lerp(cur.radius, desiredDist, 0.06);
+
+      const next = new THREE.Spherical(nextR, nextPhi, nextTheta);
+      camera.position.setFromSpherical(next);
+
+      controlsRef.current.update();
+
+      const polarClose = Math.abs(phiDelta) < THREE.MathUtils.degToRad(1.0);
+      const distClose = Math.abs(nextR - desiredDist) < 0.03;
+      if (polarClose && distClose) {
+        // fin de animación
+        desiredDirRef.current = null;
+        phaseRef.current = 'idle';
+        onActionDone();
+      }
+      return;
     }
   });
 
   useEffect(() => {
+    // Iniciar viaje a destino
     if (goToTarget) {
-      console.log('goToTarget');
-      const target = latLonToVec3(lat, lon, radius);
-      targetRef.current = target;
+      // Dirección deseada a partir de lat/lon (vector unitario)
+      const dir = latLonToVec3(lat, lon, 1);
+      desiredDirRef.current = dir;
+
+      // Bloquear interacción y apagar autoRotate durante la animación
       if (controlsRef.current) {
         controlsRef.current.autoRotate = false;
-
-        // Bloquear cualquier interacción con el mouse
-        controlsRef.current.enableRotate = false; // Evita rotar
-        controlsRef.current.enableZoom = false; // Evita zoom
-        controlsRef.current.enablePan = false; // Evita desplazamiento
+        controlsRef.current.enableRotate = false;
+        controlsRef.current.enableZoom = false;
+        controlsRef.current.enablePan = false;
+        controlsRef.current.enableDamping = true;
+        controlsRef.current.dampingFactor = 0.08;
       }
-    }
 
-    if (resetView) {
-      console.log('reset view');
-      const target = latLonToVec3(lat, lon - 1, radius);
-      targetRef.current = target;
-      if (controlsRef.current) {
-        controlsRef.current.autoRotate = true;
-        controlsRef.current.enableRotate = true;
-        controlsRef.current.enableZoom = true;
-        controlsRef.current.enablePan = true;
-        controlsRef.current.update();
-      }
+      // Fase 1: mover azimut primero (sobre el ecuador)
+      phaseRef.current = 'azimuth';
     }
+  }, [goToTarget, lat, lon, radius]);
+
+  useEffect(() => {
+    // Reiniciar vista: permitir interacción y (si quieres) auto-rotar
+    if (resetView && controlsRef.current) {
+      controlsRef.current.autoRotate = true;
+      controlsRef.current.enableRotate = true;
+      controlsRef.current.enableZoom = true;
+      controlsRef.current.enablePan = true;
+      controlsRef.current.enableDamping = true;
+      controlsRef.current.dampingFactor = 0.08;
+      controlsRef.current.update();
+
+      // Cancelar cualquier animación pendiente
+      desiredDirRef.current = null;
+      phaseRef.current = 'idle';
+    }
+  }, [resetView]);
+
+  useEffect(() => {
     if (zoomIn) {
-      console.log('entre  zoom in');
-      console.log(zoomIn);
-      setZoomingIn(true);
+      // Guardamos la distancia actual ANTES de acercar, para poder deshacer
+      preZoomDistRef.current = camera.position.length();     // 👈 clave
+      // Usa la dirección deseada actual (si existe) o la actual de la cámara
+      if (!desiredDirRef.current) {
+        desiredDirRef.current = camera.position.clone().normalize();
+      }
+      phaseRef.current = 'zoomIn';
     }
-  }, [goToTarget, resetView, lat, lon, radius, camera, onActionDone, zoomIn]);
+  }, [zoomIn, camera]);
+
+  useEffect(() => {
+    if (zoomOut) {                                           // 👈 nuevo
+      // Si no hay distancia previa, no pasa nada malo: vuelve a la orbital por defecto
+      if (!desiredDirRef.current) {
+        desiredDirRef.current = camera.position.clone().normalize();
+      }
+      phaseRef.current = 'zoomOut';
+    }
+  }, [zoomOut, camera]);
 
   return <OrbitControls ref={controlsRef} autoRotate autoRotateSpeed={0.5} />;
 };
 
 const App: React.FC = () => {
   const radius = 2.8;
-  const [goToPeru, setGoToPeru] = useState(false);
+
+  // Un único destino controlado por estado
+  const [dest, setDest] = useState<{ lat: number; lon: number }>({ lat: -9.2, lon: -75.0 }); // Perú por defecto
+  const [goToTarget, setGoToTarget] = useState(false);
   const [resetView, setResetView] = useState(true);
   const [zoomIn, setZoomIn] = useState(false);
-  const [activate, setActivate] = useState(false);
+  const [zoomOut, setZoomOut] = useState(false);   // 👈 nuevo
+  const [activeLabel, setActiveLabel] = useState<'peru' | 'china' | null>(null);
+
   return (
-    <div
-      style={{
-        // background: 'red',
-        width: '100vw',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-      }}
-    >
+    <div style={{ width: '100vw', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
         <button
           onClick={() => {
-            setActivate(true);
-            setGoToPeru(true);
+            setActiveLabel('peru');
+            setDest({ lat: -9.2, lon: -75.0 });
+            setGoToTarget(true);
           }}
-          className={!activate ? 'custom-button' : 'custom-button-selected'}
+          className={activeLabel === 'peru' ? 'custom-button-selected' : 'custom-button'}
         >
-          Ir a Perú
+          Focus Perú
         </button>
+
+        <button
+          onClick={() => {
+            setActiveLabel('china');
+            setDest({ lat: 35.0, lon: 105.0 });
+            setGoToTarget(true);
+          }}
+          className={activeLabel === 'china' ? 'custom-button-selected' : 'custom-button'}
+        >
+          Focus China
+        </button>
+
         <button
           onClick={() => {
             setResetView(true);
-            setActivate(false);
+            setActiveLabel(null);
           }}
           className="custom-button"
         >
-          Reiniciar
+          Desbloquear
         </button>
+
         <button
-          onClick={() => {
-            setZoomIn(true);
-          }}
+          onClick={() => setZoomIn(true)}
           className="custom-button"
-          disabled={!activate}
+          disabled={!activeLabel}
         >
-          Hacer Zoom
+          Zoom In
+        </button>
+
+        <button
+          onClick={() => setZoomOut(true)}          // 👈 nuevo
+          className="custom-button"
+          disabled={false /* si quieres, desactívalo hasta que haya hecho Zoom In */}
+        >
+          Zoom Out
         </button>
       </div>
-      <style>
-        {`
-    .custom-button {
-      padding: 10px 40px;
-      background-color: #1A1A1A;
-      border: 1px solid #3a3838ff;
-      border-radius: 4px;
-      cursor: pointer;
-    }
 
-    .custom-button:hover {
-      background-color: #3a3838ff
-    }
-  `}
-      </style>
-
-      <style>
-        {`
-    .custom-button-selected {
-      padding: 10px 40px;
-      background-color: #e92525ff;
-      border: 1px solid #3a3838ff;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-     .custom-button-selected:hover   {
-      background-color: #ff5c5cff
-    }
-  `}
-      </style>
+      {/* estilos… (deja tus <style> tal cual) */}
 
       <div style={{ display: 'flex' }}>
-        <div
-          style={{
-            width: '50vw',
-            height: '75vh',
-            // , border: '1px solid white'
-          }}
-        >
+        <div style={{ width: '50vw', height: '75vh' }}>
           <Canvas camera={{ position: [0, 0, 5] }} shadows>
             <ambientLight intensity={1} />
             <directionalLight position={[5, 5, 5]} castShadow />
+
             <BasicSphere radius={radius} />
+
+            {/* 👇 Un solo controlador de cámara */}
             <CameraController
-              lat={-9.2}
-              lon={-75.0}
+              lat={dest.lat}
+              lon={dest.lon}
               radius={radius}
-              goToTarget={goToPeru}
+              goToTarget={goToTarget}
               resetView={resetView}
-              zoomIn={zoomIn} // 👈 Asegúrate de incluir esto
+              zoomIn={zoomIn}
+              zoomOut={zoomOut}                     // 👈 nuevo
               onActionDone={() => {
-                setGoToPeru(false);
+                setGoToTarget(false);
                 setResetView(false);
-                setZoomIn(false); // 👈 Reseteas cuando termina el zoom
+                setZoomIn(false);
+                setZoomOut(false);                  // 👈 limpia Zoom Out también
               }}
             />
           </Canvas>
         </div>
-        {/* 
-        <div style={{ width: '50vw', height: '75vh', border: '1px solid black' }}>
-          <Canvas camera={{ position: [0, 0, 5] }} shadows>
-            <ambientLight intensity={1} />
-            <directionalLight position={[5, 5, 5]} castShadow />
-            <BasicSphere radius={radius} textureProp="/assets/mapa.png" />
-            <OrbitControls autoRotate={true} autoRotateSpeed={0.2} maxDistance={10} />
-          </Canvas>
-        </div> */}
       </div>
     </div>
   );
