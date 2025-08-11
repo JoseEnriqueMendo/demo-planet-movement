@@ -2,8 +2,20 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import BasicSphere from './components/BasicSphere';
-import { OrbitControls, Billboard } from '@react-three/drei';
+import { OrbitControls, Billboard, Html } from '@react-three/drei';
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import { useLoader } from '@react-three/fiber'
+import { TextureLoader } from 'three'
+import logoImg from '/assets/logo-lds.png' // tu logo
+
+function LogoSprite() {
+  const texture = useLoader(TextureLoader, logoImg)
+  return (
+    <sprite scale={[2, 1, 1]} position={[0, 2, 0]}>
+      <spriteMaterial map={texture} transparent />
+    </sprite>
+  )
+}
 
 interface CameraControllerProps {
   lat: number;
@@ -35,14 +47,6 @@ const shortestAngleDelta = (from: number, to: number) => {
   if (d < -Math.PI) d += Math.PI * 2;
   return d;
 };
-
-// Convierte lat/lon a vec3 en "altura" (radius * k) para que flote sobre la esfera
-const latLonToVec3At = (lat: number, lon: number, r: number, k = 1.01) =>
-  latLonToVec3(lat, lon, r * k);
-
-// Pequeña ayuda para crear clúster con offsets lat/lon en grados
-const clusterFrom = (lat0: number, lon0: number, offsets: Array<[number, number]>) =>
-  offsets.map(([dLat, dLon]) => ({ lat: lat0 + dLat, lon: lon0 + dLon }));
 
 // Anclas para el foco (coinciden con el centro de los halos)
 const LIMA_ANCHOR = { lat: -10.0464, lon: -77.0428 };
@@ -203,9 +207,6 @@ const CameraController: React.FC<CameraControllerProps> = ({
     if (phaseRef.current === 'zoomIn') {
       // acercar manteniendo dirección
       const dirToCenter = camera.position.clone().normalize();
-      const target = desiredDirRef.current
-        ? desiredDirRef.current.clone().multiplyScalar(radius) // punto sobre la superficie
-        : new THREE.Vector3(0, 0, 0);
 
       // distancia deseada para vista cercana
       const minDist = radius * 1.05; // apenas fuera de la esfera
@@ -416,6 +417,9 @@ const App: React.FC = () => {
   }, [isZoomedIn, activeLabel]);
 
   return (
+
+
+
     <div style={{ width: '100vw', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
         <button
@@ -424,7 +428,7 @@ const App: React.FC = () => {
             setDest(LIMA_ANCHOR);
             setGoToTarget(true);
           }}
-          className={activeLabel === 'peru' ? 'custom-button-selected' : 'custom-button'}
+          className={activeLabel === 'peru' ? 'btn btn-accent' : 'btn btn-ghost'}
         >
           Focus Perú
         </button>
@@ -435,7 +439,7 @@ const App: React.FC = () => {
             setDest(BEIJING_ANCHOR);
             setGoToTarget(true);
           }}
-          className={activeLabel === 'china' ? 'custom-button-selected' : 'custom-button'}
+          className={activeLabel === 'china' ? 'btn btn-accent' : 'btn btn-ghost'}
         >
           Focus China
         </button>
@@ -446,14 +450,14 @@ const App: React.FC = () => {
             setIsZoomedIn(false);   // 👈
             setActiveLabel(null);
           }}
-          className="custom-button"
+          className="btn btn-ghost"
         >
           Desbloquear
         </button>
 
         <button
           onClick={() => { setPendingZoomIn(true); setZoomIn(true); }}
-          className="custom-button"
+          className="btn btn-primary"
           disabled={!activeLabel}
         >
           Zoom In
@@ -461,7 +465,7 @@ const App: React.FC = () => {
 
         <button
           onClick={() => { setIsZoomedIn(false); setZoomOut(true); }}
-          className="custom-button"
+          className="btn btn-primary"
         >
           Zoom Out
         </button>
@@ -470,9 +474,27 @@ const App: React.FC = () => {
       {/* estilos… (deja tus <style> tal cual) */}
 
       <div style={{ display: 'flex' }}>
-        <div style={{ width: '50vw', height: '75vh' }}>
+        <div style={{ width: '50vw', height: '75vh', borderRadius: '24px', overflow: 'hidden' }}>
           <Canvas camera={{ position: [0, 0, 5] }} shadows>
+            <color attach="background" args={['#020a21']} />
+            <Html fullscreen>
+              <img
+                src={logoImg}        // o "/logo-lds.png" si está en public
+                alt="Luz del Sur"
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 16,
+                  width: 140,            // ajusta tamaño
+                  pointerEvents: 'none', // no bloquea el drag del OrbitControls
+                  userSelect: 'none',
+                  filter: 'drop-shadow(0 2px 6px rgba(0,0,0,.35))'
+                }}
+              />
+            </Html>
+
             <ambientLight intensity={1} />
+
             <directionalLight position={[5, 5, 5]} castShadow />
 
             <BasicSphere radius={radius} />
