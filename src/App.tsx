@@ -4,7 +4,18 @@ import * as THREE from 'three';
 import BasicSphere from './components/BasicSphere';
 import { OrbitControls, Billboard } from '@react-three/drei';
 import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import Plot from 'react-plotly.js';
+// importación de imagenes
 import logoSmall from '/assets/logo-lds-movil.png';
+import success from '/assets/success.png';
+import alert from '/assets/alert.png';
+import warning from '/assets/warning.png';
+import cam1 from '/assets/cam1.jpg';
+import cam2 from '/assets/cam2.jpg';
+import cam3 from '/assets/cam3.jpg';
+import cam4 from '/assets/cam4.webp';
+import cam5 from '/assets/cam5.jpg';
+import cam6 from '/assets/cam6.jpg';
 
 type Lang = 'es' | 'en' | 'zh';
 
@@ -18,6 +29,27 @@ const M: Record<Lang, Record<string, string>> = {
     langLabel: 'Idioma',
     date: 'Fecha',
     hour: 'Hora',
+    distribucion: 'Distribución',
+    generacion: 'Generación',
+    subestaciones: 'Subestaciones',
+    medicionInteligente: 'Medición Inteligente',
+    enero: 'Enero',
+    febrero: 'Febrero',
+    marzo: 'Marzo',
+    abril: 'Abril',
+    mayo: 'Mayo',
+    junio: 'Junio',
+    julio: 'Julio',
+    agosto: 'Agosto',
+    septiembre: 'Septiembre',
+    octubre: 'Octubre',
+    noviembre: 'Noviembre',
+    diciembre: 'Diciembre',
+    nombre: 'Nombre',
+    informacion: 'Información',
+    verDetalles: 'Ver detalles',
+    maximaDemandaForecast: 'Máxima demanda forecast',
+    generacionMetaEnergia: 'Generación meta de energía',
   },
   en: {
     focusPeru: 'Focus Peru',
@@ -28,6 +60,27 @@ const M: Record<Lang, Record<string, string>> = {
     langLabel: 'Language',
     date: 'Date',
     hour: 'Hour',
+    distribucion: 'Distribution',
+    generacion: 'Generation',
+    subestaciones: 'Substations',
+    medicionInteligente: 'Smart Metering',
+    enero: 'January',
+    febrero: 'February',
+    marzo: 'March',
+    abril: 'April',
+    mayo: 'May',
+    junio: 'June',
+    julio: 'July',
+    agosto: 'August',
+    septiembre: 'September',
+    octubre: 'October',
+    noviembre: 'November',
+    diciembre: 'December',
+    nombre: 'Name',
+    informacion: 'Information',
+    verDetalles: 'View details',
+    maximaDemandaForecast: 'Maximum demand forecast',
+    generacionMetaEnergia: 'Target energy generation',
   },
   zh: {
     focusPeru: '聚焦秘鲁',
@@ -38,6 +91,27 @@ const M: Record<Lang, Record<string, string>> = {
     langLabel: '语言',
     date: '日期',
     hour: '小时',
+    distribucion: '配电',
+    generacion: '发电',
+    subestaciones: '变电站',
+    medicionInteligente: '智能计量',
+    enero: '一月',
+    febrero: '二月',
+    marzo: '三月',
+    abril: '四月',
+    mayo: '五月',
+    junio: '六月',
+    julio: '七月',
+    agosto: '八月',
+    septiembre: '九月',
+    octubre: '十月',
+    noviembre: '十一月',
+    diciembre: '十二月',
+    nombre: '名称',
+    informacion: '信息',
+    verDetalles: '查看详情',
+    maximaDemandaForecast: '最大需求预测',
+    generacionMetaEnergia: '能源发电目标',
   },
 };
 
@@ -467,6 +541,20 @@ const App: React.FC = () => {
   const clipPath2 = 'polygon(0 0, 100% 0, 90% 100% , 10% 100%)';
   const clipPath3 = 'polygon(6% 0, 100% 0, 100% 100% , 0% 100%)';
   const clipPathUp1 = 'polygon(0 0, 100% 0, 70% 100% , 65% 80%, 35% 80%,  30% 100% )';
+  const months = [
+    t('enero'),
+    t('febrero'),
+    t('marzo'),
+    t('abril'),
+    t('mayo'),
+    t('junio'),
+    t('julio'),
+    t('agosto'),
+    t('septiembre'),
+    t('octubre'),
+    t('noviembre'),
+    t('diciembre'),
+  ];
 
   useEffect(() => {
     const actualizarHora = () => {
@@ -494,12 +582,75 @@ const App: React.FC = () => {
     return () => clearInterval(intervalo);
   }, []);
 
+  const [dataExample1, setDataExample1] = useState([
+    28, 30, 25, 8, 15, 9, 22, 10, 12, 17, 20, 24,
+  ]);
+
+  const [dataExample2, setDataExample2] = useState([
+    [10, 15, 8, 20, 12, 18, 25, 22, 17, 30, 28, 24],
+    [28, 30, 25, 8, 15, 9, 22, 10, 12, 17, 20, 24],
+  ]);
+
+  const [opcionSelect1, setOpcionSelect1] = useState('op1-1');
+  const [opcionSelect2, setOpcionSelect2] = useState('op2-1');
+
+  const CardImage: React.FC<{
+    title: string;
+    description: string;
+    image: string;
+  }> = ({ title, description, image }) => {
+    return (
+      <div className="border flex flex-col w-[7vw] ">
+        <img src={image} className="w-[7vw] h-[8vh]" />
+        <div className="flex flex-row  h-7 gap-1">
+          <div className=" bg-[#0d2538]  p-1 w-7 h-full  flex items-center justify-center align-middle">
+            <div className="bg-amber-50 w-2 h-2 rounded-full "></div>
+          </div>
+          <div className="flex flex-col text-[9px] ">
+            <p className="truncate">{title}</p>
+            <p className="truncate">{description}</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const CardData: React.FC<{
+    hour: string;
+    date: string;
+    type: string;
+    description: string;
+    title: string;
+  }> = ({ hour, description, date, title, type }) => {
+    return (
+      <div
+        className={
+          'flex flex-row w-full py-2  px-1 items-center text-[9px]  bg-gradient-to-r  justify-around ' +
+          (type == 'alert'
+            ? 'from-[#c02311] via-[#101C34] to-[#040B27] '
+            : 'from-[#314D62] via-[#101C34] to-[#040B27]')
+        }
+      >
+        <img
+          src={type == 'alert' ? alert : type == 'warning' ? warning : success}
+          className={' h-fit ' + (type == 'warning' ? ' w-6' : 'w-4')}
+        />
+        <div className="flex flex-col max-w-[80%]">
+          <p>{`${t('nombre')}: ${title}`}</p>
+          <p>{`${t('informacion')}: ${description} ${date} ${hour}`}</p>
+        </div>
+
+        <div className="border-[0.5px] w-10 text-[8px] text-center"> {t('verDetalles')}</div>
+      </div>
+    );
+  };
+
   return (
     <div className="bg-[#011338] min-w-[100vw] min-h-[100vh]">
-      <div className="w-full  min-h-[7vh] h-[7vh]  flex flex-row  justify-center  items-center">
+      <div className="w-full  min-h-[7vh] h-[7vh]  flex flex-row  justify-center  items-center px-[1vw]">
         {/* barras de abajo*/}
         {/* opciones izquierda */}
-        <div className="flex flex-row items-center gap-3 w-56 text-white">
+        <div className="flex flex-row items-center gap-3 w-[15vw] text-white max-xl:text-xs">
           <label className="flex items-center gap-2">
             {t('langLabel')}:
             <select
@@ -534,7 +685,7 @@ const App: React.FC = () => {
             }}
           >
             <h1
-              className="text-4xl mt-10 mb-15 font-bold text-[#a7f2fc]"
+              className="text-4xl mt-10 mb-15 font-bold text-[#a7f2fc] max-xl:text-2xl"
               style={{ textShadow: '0 0 10px #5e8bff' }}
             >
               Information Center
@@ -542,9 +693,9 @@ const App: React.FC = () => {
           </div>
         </div>
         {/* opciones derecha */}
-        <div className="flex flex-row gap-3 w-64 ">
+        <div className="flex flex-row gap-3 w-[15vw]  text-base   max-xl:text-xs max-xl:flex-col max-xl:gap-0  items-center justify-center align-middle ">
           <p> {t('date') + ': ' + fechaLima}</p>
-          <p>-</p>
+
           <p>{t('hour') + ': ' + horaLima}</p>
         </div>
       </div>
@@ -562,6 +713,265 @@ const App: React.FC = () => {
             }}
           ></div>
         ))}
+        {/* lateral izquierdo */}
+        {activeLabel && isZoomedIn && (
+          <div className="overflow-hidden bg-gradient-to-tr from-[#03253f] via-[#101C34] to-[#040B27] w-[25%] max-w-[22.8vw] h-[95%] border-[0.2px] absolute top-8 left-5  rounded-xs shadow-lg">
+            <div className=" pl-2 bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27] shadow-2xl px-[0.3vw] py-[0.5vw] border-b-[0.5px] flex flex-row gap-2 items-center">
+              {/* <div className="rounded-full w-[0.5vw] h-[0.5vw] bg-[#4656a0] "></div> */}
+              <p className="font-bold font-serif"> {'🔹' + t('distribucion')}</p>
+            </div>
+            <div className="relative isolate p-4  bg-white/5 backdrop-blur shadow-xl border border-white/10">
+              <div className="pointer-events-none absolute -inset-4 -z-10 rounded-[2rem] blur-2xl bg-gradient-to-br from-fuchsia-500/25 via-cyan-400/20 to-emerald-500/25"></div>
+              {/* opciones */}
+
+              <div className="w-full mx-auto   min-h-10 flex flex-row items-center  justify-center gap-[0.2vw] text-xs truncate max-xl:text-[8px]">
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect1 == 'op1-1' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect1('op1-1');
+                    setDataExample1([28, 30, 25, 8, 15, 9, 22, 10, 12, 17, 20, 24]);
+                  }}
+                >
+                  2020
+                </button>
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect1 == 'op1-2' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect1('op1-2');
+                    setDataExample1([12, 25, 28, 17, 24, 9, 22, 8, 15, 30, 10, 20]);
+                  }}
+                >
+                  2021
+                </button>
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect1 == 'op1-3' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect1('op1-3');
+                    setDataExample1([28, 10, 24, 22, 20, 17, 8, 25, 30, 12, 15, 9]);
+                  }}
+                >
+                  2022
+                </button>
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect1 == 'op1-4' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect1('op1-4');
+                    setDataExample1([10, 30, 28, 12, 17, 20, 8, 15, 24, 22, 25, 9]);
+                  }}
+                >
+                  2023
+                </button>
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect1 == 'op1-5' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect1('op1-5');
+                    setDataExample1([28, 12, 9, 10, 30, 25, 15, 20, 8, 17, 22, 24]);
+                  }}
+                >
+                  2024
+                </button>
+              </div>
+              <div className=" w-[26vw] max-xl:w-[30vw] bg-transparent p-0 m-0 h-[26vh] ">
+                <Plot
+                  data={[
+                    {
+                      x: months,
+                      y: dataExample1,
+                      type: 'scatter',
+                      mode: 'lines+markers', // línea + puntos
+                      fill: 'tozeroy',
+                      fillcolor: 'rgba(70, 86, 160, 0.3)', // color del área
+                      line: { color: '#4656a0', width: 1 }, // color de la línea
+                      marker: {
+                        color: '#fffff', // color de los puntos
+                        size: 5, // tamaño de los puntos
+                        line: { color: 'white', width: 1 }, // borde de cada punto
+                      },
+                    },
+                  ]}
+                  layout={{
+                    title: {
+                      text:
+                        '<span  style="color:white; text-shadow: 2px 2px 4px #4656a0;">' +
+                        t('maximaDemandaForecast') +
+                        '</span>',
+                      x: 0.15, // posición horizontal (0 = izquierda, 0.5 = centro, 1 = derecha)
+                      xanchor: 'left', // anclar desde la izquierda para que no se corra
+                      y: 0.85, // control vertical
+                      yanchor: 'top',
+                    },
+                    xaxis: { tickfont: { color: 'white', size: 10 } },
+                    yaxis: { tickfont: { color: 'white', size: 10 } },
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent',
+                  }}
+                  useResizeHandler={true}
+                  className="w-full  ml-[-3.5vw] mt-[-2vh] h-[300px]  text-gray-600"
+                  config={{
+                    responsive: true,
+                    displayModeBar: false,
+                  }}
+                />
+              </div>
+            </div>
+            <div className="pl-2 bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27] shadow-2xl px-[0.3vw] py-[0.5vw] border-t-[2px] border-b-[0.5px] flex flex-row gap-2 items-center">
+              {/* <div className="rounded-full w-[0.5vw] h-[0.5vw] bg-[#4656a0] "></div> */}
+              <p className="font-bold font-serif"> {'🔹' + t('generacion')}n</p>
+            </div>
+            <div className="relative isolate px-6   bg-white/5 backdrop-blur shadow-xl border border-white/10">
+              <div className="pointer-events-none absolute -inset-4 -z-10 rounded-[2rem] blur-2xl bg-gradient-to-br from-fuchsia-500/25 via-cyan-400/20 to-emerald-500/25"></div>
+
+              <div className=" mt-3 w-full mx-auto  min-h-10 flex flex-row items-center  justify-center gap-[0.2vw] text-xs truncate max-xl:text-[8px]">
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect2 == 'op2-1' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect2('op2-1');
+                    setDataExample2([
+                      [12, 15, 9, 21, 13, 19, 26, 23, 18, 31, 29, 25],
+                      [29, 31, 26, 9, 16, 12, 17, 24, 13, 18, 21, 25],
+                    ]);
+                  }}
+                >
+                  2020
+                </button>
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect2 == 'op2-2' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect2('op2-2');
+                    setDataExample2([
+                      [11, 14, 8, 19, 12, 17, 24, 24, 8, 14, 27, 23],
+                      [27, 29, 19, 12, 17, 9, 21, 24, 19, 32, 30, 19, 23],
+                    ]);
+                  }}
+                >
+                  2021
+                </button>
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect2 == 'op2-3' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect2('op2-3');
+                    setDataExample2([
+                      [13, 11, 24, 13, 14, 20, 27, 24, 19, 32, 30, 26],
+                      [30, 32, 27, 10, 16, 11, 24, 13, 14, 19, 22, 26],
+                    ]);
+                  }}
+                >
+                  2022
+                </button>
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect2 == 'op2-4' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect2('op2-4');
+                    setDataExample2([
+                      [9, 13, 7, 18, 11, 16, 23, 20, 15, 28, 26, 22],
+                      [26, 28, 25, 14, 15, 8, 20, 9, 11, 15, 18, 22],
+                    ]);
+                  }}
+                >
+                  2023
+                </button>
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect2 == 'op2-5' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect2('op2-5');
+                    setDataExample2([
+                      [14, 18, 12, 23, 15, 21, 28, 25, 20, 33, 31, 27],
+                      [20, 33, 28, 12, 18, 13, 25, 14, 15, 20, 23, 27],
+                    ]);
+                  }}
+                >
+                  2024
+                </button>
+              </div>
+              <div className="   w-[400px] bg-transparent p-0 m-0 h-[300px] ">
+                <Plot
+                  data={[
+                    {
+                      x: months,
+                      y: dataExample2[0],
+                      type: 'scatter',
+                      mode: 'lines+markers',
+                      fill: 'tozeroy',
+                      fillcolor: 'rgba(0, 123, 255, 0.3)',
+                      marker: { color: 'blue', size: 8 },
+                      line: { color: 'blue', width: 2 },
+                      name: 'Serie 1',
+                    },
+                    {
+                      x: months,
+                      y: dataExample2[1],
+                      type: 'scatter',
+                      mode: 'lines+markers',
+                      fill: 'tozeroy',
+                      fillcolor: 'rgba(255, 0, 0, 0.3)',
+                      marker: { color: 'red', size: 8 },
+                      line: { color: 'red', width: 2 },
+                      name: 'Serie 2',
+                    },
+                  ]}
+                  layout={{
+                    title: {
+                      text:
+                        '<span  style="color:white; text-shadow: 2px 2px 4px #4656a0;">' +
+                        t('generacionMetaEnergia') +
+                        '</span>',
+
+                      x: 0.05, // posición horizontal (0 = izquierda, 0.5 = centro, 1 = derecha)
+                      xanchor: 'left', // anclar desde la izquierda para que no se corra
+                      y: 0.85, // control vertical
+                      yanchor: 'top',
+                    },
+                    paper_bgcolor: 'transparent',
+                    plot_bgcolor: 'transparent',
+                    margin: { l: 30, r: 0 },
+                    xaxis: {
+                      tickfont: { color: 'white', size: 10 },
+                    },
+                    yaxis: {
+                      tickfont: { color: 'white', size: 10 },
+                    },
+                    legend: { font: { color: 'white' } },
+                  }}
+                  config={{
+                    responsive: true,
+                    displayModeBar: false,
+                  }}
+                  className="w-full ml-[-1vw]  mt-[-1vh] h-[300px]  text-gray-600"
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Planeta */}
         <div className=" rounded-full  z-10 h-[75vh] w-[50vw]">
@@ -594,19 +1004,198 @@ const App: React.FC = () => {
             />
           </Canvas>
         </div>
+        {/* lateral derecho */}
+        {activeLabel && isZoomedIn && (
+          <div className="overflow-hidden bg-gradient-to-tr from-[#03253f] via-[#101C34] to-[#040B27] w-[25%] max-w-[22.8vw] h-[95%] border-[0.2px] absolute top-8 right-5  rounded-xs shadow-lg">
+            <div className=" pl-2 bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27] shadow-2xl px-[0.3vw] py-[0.5vw] border-b-[0.5px] flex flex-row gap-2 items-center">
+              {/* <div className="rounded-full w-[0.5vw] h-[0.5vw] bg-[#4656a0] "></div> */}
+              <p className="font-bold font-serif">{'🔹' + t('subestaciones')}</p>
+            </div>
+            <div className="relative isolate p-4  bg-white/5 backdrop-blur shadow-xl border border-white/10">
+              <div className="pointer-events-none absolute -inset-4 -z-10 rounded-[2rem] blur-2xl bg-gradient-to-br from-fuchsia-500/25 via-cyan-400/20 to-emerald-500/25"></div>
+              {/* opciones */}
+
+              <div className="w-full mx-auto   min-h-10 flex flex-row items-center  justify-center gap-[0.2vw] text-xs truncate max-xl:text-[8px]">
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect1 == 'op1-1' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect1('op1-1');
+                    setDataExample1([28, 30, 25, 8, 15, 9, 22, 10, 12, 17, 20, 24]);
+                  }}
+                >
+                  2020
+                </button>
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect1 == 'op1-2' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect1('op1-2');
+                    setDataExample1([12, 25, 28, 17, 24, 9, 22, 8, 15, 30, 10, 20]);
+                  }}
+                >
+                  2021
+                </button>
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect1 == 'op1-3' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect1('op1-3');
+                    setDataExample1([28, 10, 24, 22, 20, 17, 8, 25, 30, 12, 15, 9]);
+                  }}
+                >
+                  2022
+                </button>
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect1 == 'op1-4' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect1('op1-4');
+                    setDataExample1([10, 30, 28, 12, 17, 20, 8, 15, 24, 22, 25, 9]);
+                  }}
+                >
+                  2023
+                </button>
+                <button
+                  className={
+                    ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] ' +
+                    (opcionSelect1 == 'op1-5' ? 'via-[#609ca7]' : '')
+                  }
+                  onClick={() => {
+                    setOpcionSelect1('op1-5');
+                    setDataExample1([28, 12, 9, 10, 30, 25, 15, 20, 8, 17, 22, 24]);
+                  }}
+                >
+                  2024
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3">
+                <CardImage
+                  title="Subestación Santa Rosa"
+                  description="Lima Norte"
+                  image={cam1}
+                />
+                <CardImage title="Subestación Ventanilla" description="Callao" image={cam2} />
+                <CardImage
+                  title="Subestación Carabayllo"
+                  description="Carabayllo"
+                  image={cam3}
+                />
+                <CardImage
+                  title="Subestación Chorrillos"
+                  description="Chorrillos"
+                  image={cam4}
+                />
+                <CardImage title="Subestación Huachipa" description="Ate" image={cam5} />
+                <CardImage title="Subestación San Juan" description="SJL" image={cam6} />
+              </div>
+              {/* <div className="rounded-full w-[0.5vw] h-[0.5vw] bg-[#4656a0] "></div> */}
+            </div>
+            <div className="pl-2 bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27] shadow-2xl px-[0.3vw] py-[0.5vw] border-t-[2px] border-b-[0.5px] flex flex-row gap-2 items-center">
+              {/* <div className="rounded-full w-[0.5vw] h-[0.5vw] bg-[#4656a0] "></div> */}
+              <p className="font-bold font-serif">{'🔹' + t('medicionInteligente')}</p>
+            </div>
+            <div className="relative isolate px-6   bg-white/5 backdrop-blur shadow-xl border border-white/10">
+              <div className="pointer-events-none absolute -inset-4 -z-10 rounded-[2rem] blur-2xl bg-gradient-to-br from-fuchsia-500/25 via-cyan-400/20 to-emerald-500/25"></div>
+            </div>
+            <div className="w-full mt-[1vh] mx-auto   min-h-10 flex flex-row items-center  justify-center gap-[0.2vw] text-xs truncate max-xl:text-[8px]">
+              <button
+                className={
+                  ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] '
+                }
+              >
+                2020
+              </button>
+              <button
+                className={
+                  ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] '
+                }
+              >
+                2021
+              </button>
+              <button
+                className={
+                  ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] '
+                }
+              >
+                2022
+              </button>
+              <button
+                className={
+                  ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] '
+                }
+              >
+                2023
+              </button>
+              <button
+                className={
+                  ' border-[0.5px] h-[3vh] w-[4vw] bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]shadow-2xl cursor-pointer hover:via-[#609ca7] '
+                }
+              >
+                2024
+              </button>
+            </div>
+            <div className="flex flex-col gap-2  mx-auto w-[92%] mt-[1vh] max-h-[280px] overflow-auto">
+              <CardData
+                hour="10:15 AM"
+                date="15/08/2025"
+                type="alert"
+                title="Corte programado en Miraflores"
+                description="El suministro eléctrico se interrumpirá de 10:00 a 14:00 por trabajos de mantenimiento."
+              />
+              <CardData
+                hour="11:30 AM"
+                date="15/08/2025"
+                type="warning"
+                title="Posibles interrupciones en San Isidro"
+                description="Debido a condiciones climáticas, podrían producirse cortes temporales en algunas zonas."
+              />
+              <CardData
+                hour="12:05 PM"
+                date="15/08/2025"
+                type="success"
+                title="Restablecimiento de servicio"
+                description="El suministro eléctrico se ha restablecido con normalidad en Surco y La Molina."
+              />
+              <CardData
+                hour="1:45 PM"
+                date="15/08/2025"
+                type="alert"
+                title="Corte de emergencia en Callao"
+                description="Una falla en la red ha provocado la interrupción del servicio. Estamos trabajando para solucionarlo."
+              />
+              <CardData
+                hour="2:20 PM"
+                date="15/08/2025"
+                type="warning"
+                title="Trabajo de poda preventiva"
+                description="Se realizará la poda de árboles cercanos a las líneas eléctricas en Chorrillos. Puede haber cortes breves."
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="w-full min-h-[8vh]  flex flex-row items-center justify-center py-1">
+      <div className="w-full min-h-[8vh]  flex flex-row items-center justify-center pb-[2vh]  ">
         {/* barras  izquierda*/}
         <div
-          className="p-[1px] bg-white  -mr-4.5 h-8 mt-auto"
+          className="p-[1px] bg-white h-[3.3vh] max-xl:h-[4.5vh] -mr-[1vw]  mt-auto xl:mb-1"
           style={{
             clipPath: clipPath3,
             transform: 'scaleX(-1)',
           }}
         >
           <div
-            className="bg-[#040B27] p-2 w-96   h-7.5 pl-8 flex flex-row gap-5 items-center"
+            className="bg-[#040B27] p-2 w-[20vw]  h-[3vh] max-xl:h-[4.1vh] pl-8 flex flex-row gap-5 items-center"
             style={{
               clipPath: clipPath3,
             }}
@@ -627,7 +1216,7 @@ const App: React.FC = () => {
         >
           <div
             className={
-              'bg-gradient-to-r from-[#314D62] to-[#040B27] p-4 w-48 hover:via-[#2a4986] ' +
+              'bg-gradient-to-r from-[#314D62] to-[#040B27] p-4 w-[10vw] max-xl:text-xs truncate hover:via-[#2a4986] ' +
               (activeLabel === 'peru' ? 'via-[#0509ee] hover:via-[#0509ee] ' : ' ')
             }
             style={{
@@ -657,7 +1246,7 @@ const App: React.FC = () => {
         >
           <div
             className={
-              'bg-gradient-to-r from-[#314D62] to-[#040B27] p-4 w-48 hover:via-[#2a4986] ' +
+              'bg-gradient-to-r from-[#314D62] to-[#040B27] truncate  max-xl:text-xs p-4 w-[10vw]  hover:via-[#2a4986] ' +
               (activeLabel === 'china' ? 'via-[#0509ee] hover:via-[#0509ee]' : ' ')
             }
             style={{
@@ -676,9 +1265,10 @@ const App: React.FC = () => {
             </button>
           </div>
         </div>
-        <div className="h-full">
+        {/* logo */}
+        <div>
           <div
-            className="relative group flex w-16 h-16 bg-gradient-to-b from-blue-500 to-blue-700 rounded-full border-2 border-teal-300 items-center justify-center cursor pointer"
+            className="relative group flex  w-[4vw] h-[4vw] bg-gradient-to-b from-blue-500 to-blue-700 rounded-full border-2 border-teal-300 items-center justify-center cursor pointer"
             onClick={() => {
               setResetView(true);
               setIsZoomedIn(false);
@@ -704,7 +1294,7 @@ const App: React.FC = () => {
           }}
         >
           <div
-            className="bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27]  p-4 w-48 hover:via-[#2a4986] "
+            className="bg-gradient-to-r from-[#314D62] via-[#101C34] max-xl:text-xs to-[#040B27]  p-4 w-[10vw]  hover:via-[#2a4986] "
             style={{
               clipPath: clipPath2,
             }}
@@ -731,7 +1321,7 @@ const App: React.FC = () => {
           }}
         >
           <div
-            className="bg-gradient-to-r from-[#314D62] via-[#101C34] to-[#040B27] p-4 w-48  hover:via-[#2a4986] "
+            className="bg-gradient-to-r from-[#314D62] via-[#101C34] max-xl:text-xs to-[#040B27] p-4 w-[10vw]  hover:via-[#2a4986] "
             style={{
               clipPath: clipPath1,
             }}
@@ -749,13 +1339,13 @@ const App: React.FC = () => {
         </div>
         {/* barra derecha */}
         <div
-          className="p-[1.5px] bg-white h-8 mt-auto -ml-4.5"
+          className="p-[1.5px] bg-white h-[3.3vh] max-xl:h-[4.5vh]  mt-auto -ml-[1vw] xl:mb-1 "
           style={{
             clipPath: clipPath3,
           }}
         >
           <div
-            className="bg-[#040B27] p-2 w-96 h-7.5 pl-8 flex flex-row gap-5 items-center "
+            className="bg-[#040B27] p-2 w-[20vw] h-[3vh] max-xl:h-[4.1vh] pl-8 flex flex-row gap-5 items-center "
             style={{
               clipPath: clipPath3,
             }}
